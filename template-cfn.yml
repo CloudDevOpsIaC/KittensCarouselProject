@@ -1,0 +1,108 @@
+# TEMPLATE FORMAT VERSION 2010-09-09
+AWSTemplateFormatVersion: "2010-09-09"
+
+# DESCRIBE THE TEMPLATE (OPTIONAL)
+Description: | #Multiline Comment
+Cloudformation Template foro Kittens Carousel Project that creates an EC2 instance of type t2.micro and A Security Group
+
+
+Resources:
+# CREATE A SECURITY GROUP (RESOURCES)
+# SECURITY GROUP OPEN INBOUND PORT HTTP (80) AND SSH (22) (SecurityGroupIngressRules)
+  WebServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Allow trafic ghrough port 80 and 22
+      SecurityGroupIngress: 
+      # LIST ARRAY OR SYNTACS WITH A []
+      # - Ingress
+       # CidrIp: String
+  # CidrIpv6: String
+  # Description: String
+  # FromPort: Integer
+  # IpProtocol: String
+  # SourcePrefixListId: String
+  # SourceSecurityGroupId: String
+  # SourceSecurityGroupName: String
+  # SourceSecurityGroupOwnerId: String
+      # - CidrIp: "0.0.0.0"
+      - CidrIp: "0.0.0.0/0"
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: tcp
+      - CidrIp: "0.0.0.0/0"
+        FromPort: 22
+        ToPort: 22
+        IpProtocol: tcp
+      Tags: 
+      - Tag
+      VpcId: String
+#     Type: AWS::EC2::SecurityGroup
+# Properties: 
+#   GroupDescription: String
+#   GroupName: String
+#   SecurityGroupEgress: 
+#     - Egress
+#   SecurityGroupIngress: 
+#     - Ingress
+#   Tags: 
+#     - Tag
+#   VpcId: String
+
+
+# CREATE A EC2 INSTANCE WITH TYPE T2.MICRO ( Resources )
+# DEFINE A USER DATA SCRIPT (UserData)
+# INSTALL APACHE WEB SERVER
+
+
+#COPY THE STATIC FILES FROM OUR GITHUB REPO
+# START APACHE WEB SERVER
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+    # AMI Catalog > AMI-XXX ImageID
+      ImageID: ami-06e46074ae430fba6
+      KeyName: KEY_NAME!!!
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !Ref WebServerSG
+      Tags:
+        - Key: Name
+          # Value: Webserver of stack NAME used for the StackName
+          Value: !Sub WebServer of stack ${AWS::StackName}
+      UserData:
+        # VERY IMPORTANT PARAMETAR PRE-INSTALL SCRIPT
+        Fn::Base64: | #!/bin/bash yum install && yum upadate -y 
+          #!/bin/bash
+          yum update -y
+          yum install httpd -y
+          
+          FOLDER="https://raw.githubusercontent.com/CloudDevOpsIaC/KittensCarouselProject/main/static-web"
+          cd /var/www/html
+
+          wget $FOLDER/index.html
+          wget $FOLDER/cat0.jpg
+          wget $FOLDER/cat1.jpg
+          wget $FOLDER/cat2.jpg
+          wget $FOLDER/cat3.png
+
+          systemctl enable httpd
+          systemctl start httpd
+
+
+
+
+
+# CREATE AN OUTPUT BLOCK (Outputs)
+# RETURN THE PUBLIC IP OF THE 3C2 INSTANCE OR ITS PUBLIC DNS NAME!
+Outputs:
+  WebServerPublicDNS:
+    Description: Public DNS Name of Kittens Web Server
+   
+    # Value: !GetAtt WebServer.PublicDnsName # VERSION 1 RETURNING ONLY THE DNS
+    
+    # Value: !Join ["://", [ http://, !GetAtt WebServer.PublicDnsName]] # VERSION 2 ANOTHER SYNTAX
+   
+    Value: !Sub # VERSION 3
+      - http://${PublicDNS}
+      - PublicDNS: !GettAtt Webserver.PublicDnsName
